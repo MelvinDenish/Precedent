@@ -1,0 +1,32 @@
+# ── Corpus: never commit university question papers ──────────
+# Redistributing exam papers is a different question from using
+# them locally. Seed PDFs stay on disk; the repo holds the loader
+# plus a small synthetic fixture set for tests.
+/corpus/
+/seed/
+*.pdf
+!tests/fixtures/**/*.pdf
+
+# ── Secrets ──────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Node ─────────────────────────────────────────────────────
+node_modules/
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+
+# ── Models (ONNX weights are large, downloaded at runtime) ───
+/.models/
+*.onnx
+
+# ── Local / editor ───────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+coverage/
