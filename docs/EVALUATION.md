@@ -49,17 +49,80 @@ Report at k = 5, 10, 20. The Night Before mode's realistic budget is roughly k =
 
 ## 3. Corpus adequacy, and the protocol decision
 
-**The risk.** Anna University R2021 began in 2021-22, so a 4th-semester subject like CS3492 has only about **3-4 sittings**. A held-out design on four papers gives 3 train / 1 test, and "our top 10 concepts covered 71% of marks" computed from three papers dies to a single interviewer question.
+### 3.1 What the corpus actually is (measured, not assumed)
 
-**The mitigation, in order:**
+The seed corpus is **Anna University University Departments, Regulation 2023**,
+covering three subjects, with 31 past papers plus module notes, textbooks and
+lecture slides:
 
-1. **Bridge to R2017** via `subject_lineage`, discounting older evidence by concept overlap. CS8492 (R2017) has substantially more sittings than CS3492 (R2021).
-2. **Count sittings per subject during Week 2 seeding.** Write the number down.
-3. **If any subject lands under ~6 sittings**, either drop it from the evaluation set, or switch the whole protocol to **pooled leave-one-year-out cross-validation across all four subjects**, which yields many more folds from the same corpus.
+| Subject | Code | Past papers |
+|---|---|---|
+| Operating Systems | CS23501 | 9 |
+| Networks and Data Communication | CS23502 | 14 |
+| Theory of Computation | CS23503 | 8 |
 
-Discovering the corpus is too thin in Week 4 costs the headline result with two weeks remaining. This is why the decision is scheduled early.
+This differs from what the earlier drafts of these documents assumed (R2021,
+affiliated non-autonomous colleges). Three consequences:
 
----
+1. **The papers are not all centrally set.** End-semester papers come from the
+   university departments; the corpus also contains CEG- and MIT-specific
+   internal assessments and quizzes. These are recorded as `papers.college`
+   and `papers.exam_type` rather than as corpus keys, so the shared graph
+   stays whole while statistics can be scoped. **Statistics default to the
+   centrally-set end-semester slice**, because a quiz's MCQs and a 13-mark
+   end-semester question do not belong in the same marks band.
+2. **Older papers are a genuinely different subject code and regulation** --
+   `CS6111` under Regulation 2018 rather than `CS23502` under R2023. The
+   `subject_lineage` bridge is therefore load-bearing rather than decorative,
+   exactly as anticipated.
+3. **No syllabus document is present.** However, every R2023 paper prints its
+   course-outcome list and tags each question with a `CO` and a `BL` (Bloom's
+   level), and the module notes are numbered `Module01..10`. Units are derived
+   from those, and the printed `CO` codes serve as ground-truth supervision
+   for syllabus alignment -- better evidence than the `unit_hint` the schema
+   originally guessed at. The coverage matrix's "in syllabus, never examined"
+   quadrant remains only partially answerable until the official syllabus is
+   supplied.
+
+### 3.2 Extraction difficulty, measured across all 31 papers
+
+`PRD.md` section 7 deferred photocopy OCR on the grounds that "archive PDFs are
+mostly digital text". **That is false for this corpus.**
+
+| Text layer | Papers | Handling |
+|---|---|---|
+| Usable | 11 | Rule-based segmentation on the digital path |
+| Absent | 19 | Gemini vision |
+| Present but unusable | 1 | Gemini vision, after the quality gate rejects it |
+
+**Vision is therefore the primary extraction path, not a fallback**, and an
+empty-text-layer check is insufficient: `TOC-R2023-EndSem-25S5.pdf` carries
+~5,800 characters of text layer that reads `"Answer a uest1ons"` and
+`"Define ambiquous qrammar"`. It passes an emptiness check and then silently
+poisons every embedding and cluster computed from it, which is why
+`assessTextQuality()` measures quality rather than presence. It is calibrated
+against all 31 papers and classifies them correctly.
+
+### 3.3 The protocol decision
+
+**The risk.** A held-out design needs train years plus a test year. With four
+sittings you get 3 train / 1 test, and "our top 10 concepts covered 71% of
+marks" computed from three papers dies to a single interviewer question.
+
+**The decision: pooled leave-one-year-out cross-validation across all three
+subjects, restricted to end-semester sittings.** Per-subject paper counts
+above are before filtering by exam type and before de-duplication, so no
+subject is safely above the ~6-sitting threshold on its own. Pooling yields
+far more folds from the same corpus, and EVALUATION's own rule -- switch to
+pooled LOYO when any subject lands under ~6 -- selects it.
+
+**Exact sitting counts are pending**, because exam year and session must be
+parsed from each paper's header rather than its filename: several papers
+(`OS-Endsem-BT`, `TOC-Endsem-OT`) carry no year in the filename at all, and
+`CN-CEG-22S5-QP.pdf` has a header reading `12th September 2022, CS6111,
+Regulation 2018`. The counts get written here once header parsing runs, and
+the pooled-LOYO choice is re-confirmed against them rather than locked on
+today's estimate.
 
 ## 4. Pipeline quality
 
