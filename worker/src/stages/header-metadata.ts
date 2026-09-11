@@ -57,7 +57,8 @@ function parseSession(header: string): { session: string | null; nonStandard: bo
   );
   if (single) {
     const slug = single[1]?.slice(0, 3).toLowerCase() ?? null;
-    return { session: slug, nonStandard: slug !== null && !MONTHS.includes(slug) ? true : true };
+    // A lone month is always non-standard: every official sitting is a pair.
+    return { session: slug !== null && MONTHS.includes(slug) ? slug : null, nonStandard: true };
   }
   return { session: null, nonStandard: false };
 }
@@ -106,21 +107,37 @@ function parseSemester(header: string): number | null {
  * nominally the same subject.
  */
 function parseSubjectCode(header: string): string | null {
-  const m = /\b([A-Z]{2,4}\s?\d{4,6})\b/.exec(header);
-  return m?.[1] ? m[1].replace(/\s+/g, '') : null;
+  for (const m of header.matchAll(/\b([A-Z]{2,4})\s?(\d{4,6})\b/g)) {
+    const letters = m[1] ?? '';
+    // "NOV/DEC2025" looks exactly like a subject code and is not one. The
+    // sitting line always precedes the subject line, so without this the
+    // month always wins and every centrally-set paper is filed under
+    // subject "DEC2025".
+    if (MONTHS.includes(letters.toLowerCase())) continue;
+    return `${letters}${m[2]}`;
+  }
+  return null;
 }
 
 function parseSubjectName(header: string, code: string | null): string | null {
   if (code === null) return null;
   // The name follows the code on the same line, after a separator that is
   // variously "-", "&", ":" or nothing at all.
-  const escaped = code.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const m = new RegExp(`${escaped}\\s*[-:&]?\\s*([A-Za-z][A-Za-z ,.&/()-]{3,80})`).exec(
-    header.replace(/\s+/g, ' '),
-  );
-  if (!m?.[1]) return null;
-  const name = m[1].split(/\s*\(/)[0]?.trim() ?? '';
-  return name.length >= 4 ? name.slice(0, 200) : null;
+  // String.raw on every dynamically-built pattern: a template literal eats
+  // the backslash in "\s", which degrades silently into a literal "s".
+  const escaped = code.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+  const pattern = new RegExp(String.raw`${escaped}\s*[-:&]?\s*([A-Za-z][A-Za-z ,.&/()-]{3,80})`);
+  // Line by line, never over a flattened header. Flattening lets the match
+  // run past the end of the title into whatever follows it, which turns
+  // "CS6111-Computer Networks / Mid Sem / Time: 1.30hrs" into the subject
+  // name "Computer Networks Mid Sem Time".
+  for (const line of header.split('\n')) {
+    const m = pattern.exec(line.replace(/\s+/g, ' '));
+    if (!m?.[1]) continue;
+    const name = m[1].split(/\s*\(/)[0]?.trim() ?? '';
+    if (name.length >= 4) return name.slice(0, 200);
+  }
+  return null;
 }
 
 export function parseHeaderMetadata(
@@ -129,6 +146,8 @@ export function parseHeaderMetadata(
   totalMarksFromTemplate: number | null,
 ): HeaderParse {
   const warnings: string[] = [];
+  // Scanned headers carry non-breaking spaces, which defeat every
+  // \s-anchored pattern below. Written as an escape so it stays visible.
   const header = headerText.replace(/ /g, ' ');
 
   // A four-digit year in the plausible exam range. The FIRST one wins:

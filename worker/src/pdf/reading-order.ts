@@ -51,6 +51,14 @@ const GUTTER_SEARCH_MAX = 0.7;
 const MIN_SIDE_CHAR_SHARE = 0.3;
 
 /**
+ * Share of baselines a candidate gutter may be crossed on and still count
+ * as clear. Non-zero on purpose: a two-column page almost always carries a
+ * centred heading, a running head or a part header spanning both columns,
+ * and demanding a perfectly clear channel would reject every real one.
+ */
+const MAX_GUTTER_CROSSING_SHARE = 0.15;
+
+/**
  * Joins items already sorted left-to-right, inserting a space wherever the
  * geometry says one was drawn but no whitespace item exists.
  */
@@ -76,17 +84,31 @@ export function joinItems(items: PdfTextItem[]): string {
 /**
  * Groups items into baselines.
  *
- * The tolerance scales with glyph height rather than being a constant,
- * because these papers mix a 14pt title with 8pt table cells on one page.
- * It is also deliberately generous -- half the glyph height -- because in
- * the R2023 table the Marks/CO/BL cells are typeset a few points above the
- * question text they annotate and belong to the same logical row. The block
- * pass in the segmenter is what actually guarantees they attach to the
- * right question, so a slightly greedy merge here is the safe direction.
+ * THE TOLERANCE IS A PAGE PROPERTY, NOT AN ITEM PROPERTY. Deriving it from
+ * each item's own glyph height -- the obvious approach -- fails on exactly
+ * the rows that matter, because the parts of a table row are set in
+ * different sizes and on slightly different baselines:
+ *
+ *   y=375 x=108  "Give the difference between multiprogramming ..."  h=10
+ *   y=371 x=78   "1"                                                 h=7.7
+ *
+ * That is one row. A per-item tolerance of 0.5 * 7.7 = 3.85 misses the 4pt
+ * offset by a fifth of a point, and the question number becomes its own
+ * line -- which then reads as an empty question, while its text is absorbed
+ * into the question above. Both failures are silent.
+ *
+ * The page's MEDIAN glyph height is the right scale: body line spacing in
+ * these papers is 11-13pt and intra-row baseline scatter is 3-5pt, so a
+ * tolerance a little over half the median separates them cleanly while
+ * staying robust to a 14pt title sharing the page with 8pt cells.
  */
 function clusterIntoLines(items: PdfTextItem[], pageNo: number, column: number): LayoutLine[] {
   if (items.length === 0) return [];
   const ordered = [...items].sort((a, b) => b.y - a.y || a.x - b.x);
+
+  const heights = ordered.map((i) => i.height || 10).sort((a, b) => a - b);
+  const medianHeight = heights[heights.length >> 1] ?? 10;
+  const tolerance = Math.min(7, Math.max(2, medianHeight * 0.55));
 
   const lines: LayoutLine[] = [];
   let bucket: PdfTextItem[] = [];
@@ -113,7 +135,6 @@ function clusterIntoLines(items: PdfTextItem[], pageNo: number, column: number):
   };
 
   for (const item of ordered) {
-    const tolerance = Math.min(6, Math.max(2, (item.height || 10) * 0.5));
     if (bucket.length === 0) {
       bucketY = item.y;
       bucket.push(item);
@@ -160,32 +181,49 @@ export function detectReadingColumns(page: RawPdfPage): number | null {
   const items = page.items.filter((i) => i.str.trim().length > 0);
   if (items.length < 40) return null; // too sparse to conclude anything
 
-  const bin = Math.max(2, page.width / 200);
-  const binCount = Math.ceil(page.width / bin) + 1;
-  const occupied = new Array<boolean>(binCount).fill(false);
-  for (const it of items) {
-    const from = Math.max(0, Math.floor(it.x / bin));
-    const to = Math.min(binCount - 1, Math.ceil((it.x + Math.max(it.width, 1)) / bin));
-    for (let b = from; b <= to; b++) occupied[b] = true;
+  // Occupancy is counted PER BASELINE, not over the whole page, so that a
+  // single centred heading spanning both columns does not close the
+  // gutter for the rest of the page. Measuring raw ink coverage instead --
+  // the obvious approach -- makes any two-column page with a running head
+  // or a part header look single-column.
+  const rows = new Map<number, PdfTextItem[]>();
+  for (const item of items) {
+    const key = Math.round(item.y / 6);
+    const bucket = rows.get(key);
+    if (bucket) bucket.push(item);
+    else rows.set(key, [item]);
   }
+  const baselines = [...rows.values()];
+  const maxCrossings = Math.max(1, Math.floor(baselines.length * MAX_GUTTER_CROSSING_SHARE));
 
+  const bin = Math.max(2, page.width / 200);
   const searchFrom = Math.floor((page.width * GUTTER_SEARCH_MIN) / bin);
   const searchTo = Math.ceil((page.width * GUTTER_SEARCH_MAX) / bin);
   const minGutterBins = Math.ceil((page.width * MIN_GUTTER_RATIO) / bin);
   const totalChars = items.reduce((n, i) => n + i.str.trim().length, 0);
 
+  const clear: boolean[] = [];
+  for (let b = searchFrom; b <= searchTo; b++) {
+    const x = b * bin;
+    let crossings = 0;
+    for (const baseline of baselines) {
+      if (baseline.some((i) => i.x < x && i.x + i.width > x)) crossings += 1;
+      if (crossings > maxCrossings) break;
+    }
+    clear[b - searchFrom] = crossings <= maxCrossings;
+  }
+
   let best: { x: number; width: number } | null = null;
   let runStart = -1;
-  for (let b = searchFrom; b <= searchTo + 1; b++) {
-    const free = b <= searchTo && occupied[b] === false;
-    if (free) {
-      if (runStart < 0) runStart = b;
+  for (let k = 0; k <= clear.length; k++) {
+    if (clear[k] === true) {
+      if (runStart < 0) runStart = k;
       continue;
     }
     if (runStart >= 0) {
-      const runBins = b - runStart;
+      const runBins = k - runStart;
       if (runBins >= minGutterBins) {
-        const centre = ((runStart + b) / 2) * bin;
+        const centre = (searchFrom + (runStart + k) / 2) * bin;
         const leftChars = items
           .filter((i) => i.x + i.width / 2 < centre)
           .reduce((n, i) => n + i.str.trim().length, 0);

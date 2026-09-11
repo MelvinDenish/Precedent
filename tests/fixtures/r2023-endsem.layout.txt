@@ -1,0 +1,126 @@
+# Synthetic Anna University R2023 end-semester paper, modelled on the real
+# template and on the real coordinate geometry measured from
+# OS-R2023-Supplementary-25.pdf. No corpus content is reproduced: the
+# question wording is invented, the LAYOUT is what is being tested.
+#
+# Format: x | y | text          (see worker/src/testing/fixture-layout.ts)
+#         "|h=7.7" sets a smaller glyph height.
+#
+# Deliberately reproduced from the real papers:
+#   - the question number set in a smaller font on its own baseline, 4pt
+#     below its question text (page 1, question 1);
+#   - a question whose number glyph is MISSING entirely (question 9);
+#   - Marks/CO/BL as right-hand cells, with the table in a DIFFERENT
+#     horizontal position on page 2 than on page 1;
+#   - a literal centred OR between 11(a) and 11(b);
+#   - sub-parts splitting 13 into 5 + 8;
+#   - a header whose year (2025) contradicts the filename hint (2022).
+
+@page 1 width=546 height=792
+167 | 680 | ANNA UNIVERSITY (UNIVERSITY DEPARTMENTS)
+87  | 667 | B.E./B.Tech (Full Time) - END SEMESTER EXAMINATIONS, NOV/DEC 2025
+191 | 648 | COMPUTER SCIENCE AND ENGINEERING
+263 | 637 | V Semester
+220 | 624 | CS23501 Operating Systems
+242 | 614 | (Regulation 2023)
+65  | 597 | Time: 3 hrs
+300 | 597 | Max. Marks: 100
+
+216 | 410 | PART - A (10 x 2 = 20 Marks)
+224 | 401 | (Answer all Questions)
+68  | 389 | Q.No.
+224 | 389 | Questions
+396 | 389 | Marks
+437 | 389 | CO
+471 | 389 | BL
+
+# Question 1: the number sits 4pt BELOW its text, in a smaller font.
+108 | 375 | Name two differences between a process and a thread.
+403 | 375 | 2
+440 | 375 | CO1
+474 | 375 | L2
+78  | 371 | 1|h=7.7
+
+108 | 355 | Define a system call and give one example.
+403 | 355 | 2
+440 | 355 | CO1
+474 | 355 | L1
+78  | 355 | 2|h=7.7
+
+108 | 335 | State the purpose of a page table.
+403 | 335 | 2
+440 | 335 | CO4
+474 | 335 | L1
+78  | 335 | 3|h=7.7
+
+@page 2 width=546 height=792
+# The table is shifted right on this page, exactly as it is in the real
+# corpus. A document-wide band set learned from page 1 reads these marks
+# cells as course outcomes.
+69  | 454 | Q.No.
+241 | 454 | Questions
+428 | 454 | Marks
+474 | 454 | CO
+510 | 454 | BL
+
+116 | 438 | Explain how a semaphore prevents a race condition.
+442 | 438 | 2
+472 | 438 | CO3
+512 | 438 | L2
+82  | 438 | 8|h=7.7
+
+# Question 9 has NO number glyph at all. Its Marks/CO/BL triple is the
+# only evidence it exists.
+115 | 418 | State two advantages of sequential file access.
+442 | 418 | 2
+472 | 418 | CO5
+512 | 418 | L1
+
+79  | 398 | 10|h=7.7
+115 | 398 | Describe how a bitmap tracks free disk blocks.
+442 | 398 | 2
+472 | 398 | CO5
+512 | 398 | L2
+
+230 | 370 | PART - B (5 x 13 = 65 Marks)
+207 | 359 | (Restrict to a maximum of 2 subdivisions)
+69  | 345 | Q.No.
+241 | 345 | Questions
+428 | 345 | Marks
+474 | 345 | CO
+510 | 345 | BL
+
+71  | 330 | 11 (a)
+114 | 330 | Define a process and list the activities an operating system
+437 | 330 | 13
+471 | 330 | CO1
+512 | 330 | L2
+115 | 317 | performs on its behalf.
+
+289 | 303 | OR
+
+71  | 289 | 11 (b)
+131 | 289 | (i)
+166 | 289 | Explain the services an operating system provides to a user.
+441 | 289 | 5
+472 | 289 | CO1
+513 | 289 | L2
+131 | 270 | (ii)
+166 | 270 | Explain the system calls used for device management.
+441 | 270 | 8
+
+@page 3 width=546 height=792
+189 | 560 | PART - C (1 x 15 = 15 Marks)
+230 | 549 | (Q.No.16 is compulsory)
+69  | 535 | Q.No.
+241 | 535 | Questions
+428 | 535 | Marks
+474 | 535 | CO
+510 | 535 | BL
+
+71  | 520 | 16
+114 | 520 | Given the snapshot of a system below, apply the banker algorithm
+437 | 520 | 15
+471 | 520 | CO3
+512 | 520 | L4
+115 | 507 | and decide whether the state is safe.

@@ -1,0 +1,42 @@
+# A genuinely TWO-COLUMN page, for the coordinate-sort pass.
+#
+# This is the case the reading-order pass exists for, and the case that is
+# indistinguishable from the exam table on geometry alone unless the
+# discriminators in detectReadingColumns hold: a central gutter, and both
+# sides carrying real text mass.
+#
+# Read down the left column and then down the right, the sentences run:
+#   left  : "The left column begins here / and continues on a second line /
+#            and ends on a third."
+#   right : "The right column begins here / and continues on a second line /
+#            and ends on a third."
+#
+# Read naively across the page by y instead, they interleave into nonsense.
+# The assertion in the test is on that ordering.
+
+@page 1 width=600 height=792
+60  | 700 | A CENTRED HEADING THAT SPANS BOTH COLUMNS OF THIS PAGE ENTIRELY
+
+60  | 660 | The left column begins here
+60  | 645 | and continues on a second line
+60  | 630 | and ends on a third.
+60  | 600 | Left column carries a second
+60  | 585 | paragraph of ordinary prose so
+60  | 570 | that this side of the page holds
+60  | 555 | a real share of the text rather
+60  | 540 | than a thin strip of cells.
+60  | 525 | It runs on for several further
+60  | 510 | lines of plain English to keep
+60  | 495 | the character mass balanced.
+
+340 | 660 | The right column begins here
+340 | 645 | and continues on a second line
+340 | 630 | and ends on a third.
+340 | 600 | Right column carries a second
+340 | 585 | paragraph of ordinary prose so
+340 | 570 | that this side of the page holds
+340 | 555 | a real share of the text rather
+340 | 540 | than a thin strip of cells.
+340 | 525 | It runs on for several further
+340 | 510 | lines of plain English to keep
+340 | 495 | the character mass balanced.

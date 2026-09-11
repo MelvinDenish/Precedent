@@ -51,13 +51,6 @@ export const config = {
     /** Per user, not per IP: a shared campus NAT would otherwise rate-limit a whole college. */
     ratePerWindow: Number(optional('UPLOAD_RATE_MAX', '20')),
     rateWindow: optional('UPLOAD_RATE_WINDOW', '1 minute'),
-    /**
-     * Below this many extracted characters the text layer is treated as absent
-     * and the content hash is derived from the bytes instead. See pdf/text.ts:
-     * hashing near-empty text would collapse every scanned paper in a subject
-     * into one row via UNIQUE (subject_id, content_hash).
-     */
-    minTextChars: Number(optional('UPLOAD_MIN_TEXT_CHARS', '200')),
   },
 
   queue: {

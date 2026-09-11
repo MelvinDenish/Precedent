@@ -10,18 +10,22 @@
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
-import { pathToFileURL } from 'node:url';
-import { contentHash } from '@precedent/shared';
+
+import { assessTextQuality, contentHash } from '@precedent/shared';
 import type { CheapText } from '../types.js';
 
 /**
  * pdfjs warns unless it can find the standard font files. Extraction works
  * without them, but a warning per upload is noise in the logs.
+ *
+ * A plain filesystem path, NOT a file:// URL: the Node build reads this one
+ * off disk, while a file:// URL goes through fetch, which Node does not
+ * support for that scheme -- so the URL form fails to load and warns twice.
  */
-function standardFontDataUrl(): string {
+function standardFontDataPath(): string {
   const require = createRequire(import.meta.url);
   const pkg = require.resolve('pdfjs-dist/package.json');
-  return pathToFileURL(join(dirname(pkg), 'standard_fonts') + '/').href;
+  return join(dirname(pkg), 'standard_fonts') + '/';
 }
 
 /** %PDF-. Checked before parsing so a mislabelled upload fails fast and clearly. */
@@ -41,7 +45,7 @@ export async function extractCheapText(bytes: Buffer): Promise<CheapText> {
     isEvalSupported: false,
     useWorkerFetch: false,
     useSystemFonts: false,
-    standardFontDataUrl: standardFontDataUrl(),
+    standardFontDataUrl: standardFontDataPath(),
   }).promise;
 
   try {
@@ -63,37 +67,52 @@ export async function extractCheapText(bytes: Buffer): Promise<CheapText> {
 /**
  * The dedupe key, and the single most consequential decision in the upload path.
  *
- * Normally SHA-256 of the NORMALIZED text, so that the same paper from two
- * archives collides despite differing byte-wise.
+ * The design says SHA-256 of the NORMALIZED text, so that the same paper from
+ * two archives collides despite differing byte-wise. That assumes the text is
+ * extractable. In this corpus it usually is not: 20 of 31 papers are scans
+ * with no usable text layer.
  *
- * But most of this corpus is image-only scans -- 19 of 31 papers -- and a scan
- * has no text layer at all. Hashing the resulting empty string would give
- * EVERY scanned paper in a subject the same content_hash, and
- * UNIQUE (subject_id, content_hash) would then collapse them into a single
- * row: the second scan uploaded would be recorded as a duplicate of the first,
- * silently, and the corpus would lose most of its papers while reporting
- * success. So below the threshold the hash comes from the bytes instead.
+ * Hashing near-empty text would give EVERY scan in a subject the same
+ * content_hash, and UNIQUE (subject_id, content_hash) would then collapse all
+ * 20 into a single row -- each upload after the first reported as a duplicate,
+ * silently, losing most of the corpus while returning 200. That is strictly
+ * worse than no dedup at all, because no error is ever raised.
  *
- * That is weaker -- two archives' copies of one scan will not dedupe -- but
- * wrong-and-loud beats wrong-and-silent, and it is recoverable: the worker
- * runs vision extraction on exactly these papers and can recompute the real
- * text hash afterwards. Cross-archive dedup for scans is therefore deferred to
- * the worker, not abandoned.
+ * So the hash family is chosen by assessTextQuality():
  *
- * The prefix domain-separates the two hash families so a byte hash can never
- * coincide with a text hash.
+ *   usable text -> SHA-256 of normalized text. Final. Strong cross-archive
+ *                  dedup, and papers.text_source stays 'digital'.
+ *   otherwise   -> SHA-256 of the raw bytes, marked PROVISIONAL by setting
+ *                  papers.text_source = 'vision' at insert time.
+ *
+ * A provisional hash only dedupes byte-identical re-uploads, which is weaker,
+ * but it is correct-and-recoverable rather than wrong-and-silent: the worker
+ * re-hashes these papers once S1 has produced real text. Cross-archive dedup
+ * for scans is deferred to the worker, not abandoned. routes/upload.ts states
+ * the handoff contract, including the ordering that keeps contributor credits
+ * alive through a merge.
+ *
+ * assessTextQuality() is used rather than a local threshold so that the API
+ * and the worker agree on what "usable" means. They are NOT, however, looking
+ * at the same string: this sees the cheap pdfjs text layer, S1 sees its own
+ * extraction. S1 can therefore find usable text where this did not, which is
+ * precisely why the provisional marker is recorded at insert time instead of
+ * being re-derived later.
+ *
+ * The prefix domain-separates the two hash families, so a byte hash can never
+ * collide with a text hash.
  */
 export function paperContentHash(
   bytes: Buffer,
   cheap: CheapText,
-  minTextChars: number,
-): { hash: string; hasTextLayer: boolean } {
-  if (cheap.text.trim().length >= minTextChars) {
-    return { hash: contentHash(cheap.text), hasTextLayer: true };
+): { hash: string; provisional: boolean; reason: string } {
+  const quality = assessTextQuality(cheap.text);
+  if (quality.usable) {
+    return { hash: contentHash(cheap.text), provisional: false, reason: 'digital text layer' };
   }
   const hash = createHash('sha256')
     .update('precedent:provisional-bytes:', 'utf8')
     .update(bytes)
     .digest('hex');
-  return { hash, hasTextLayer: false };
+  return { hash, provisional: true, reason: quality.reason };
 }

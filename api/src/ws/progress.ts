@@ -28,10 +28,13 @@ export const paperChannel = (paperId: string): string => `paper:${paperId}`;
 
 /** Structural, so the module does not depend on @types/ws being installed. */
 export interface ProgressSocket {
-  send(data: string): void;
-  close(): void;
+  send(data: string, cb?: (err?: Error) => void): void;
+  close(code?: number, reason?: string): void;
   on(event: 'message' | 'close' | 'error', cb: (...args: never[]) => void): void;
 }
+
+/** 1008 "policy violation" -- the standard close code for a rejected client. */
+export const CLOSE_UNAUTHORIZED = 1008;
 
 export class ProgressHub {
   private readonly byChannel = new Map<string, Set<ProgressSocket>>();
@@ -96,22 +99,37 @@ export interface ProgressPlugin {
   close: () => Promise<void>;
 }
 
-export function registerProgressSocket(app: FastifyInstance, log: FastifyBaseLogger): ProgressPlugin {
+export interface ProgressOptions {
+  /**
+   * Whether to open the Redis subscription that carries worker events. The
+   * route and the hub exist either way, so the test suite can drive the hub
+   * directly without holding a blocking connection open.
+   */
+  subscribe?: boolean;
+}
+
+export function registerProgressSocket(
+  app: FastifyInstance,
+  log: FastifyBaseLogger,
+  options: ProgressOptions = {},
+): ProgressPlugin {
   const hub = new ProgressHub();
 
   // A dedicated connection: a subscribed ioredis client cannot run ordinary
   // commands, so it must not be the one the queues share.
-  const subscriber = redis().duplicate();
-  void subscriber.subscribe(PROGRESS_CHANNEL).catch((err: unknown) => {
-    log.error({ err }, 'failed to subscribe to the progress channel');
-  });
-  subscriber.on('message', (_channel: string, raw: string) => {
-    try {
-      hub.deliver(JSON.parse(raw) as IngestProgressEvent);
-    } catch (err) {
-      log.warn({ err }, 'malformed progress event discarded');
-    }
-  });
+  const subscriber = options.subscribe === false ? null : redis().duplicate();
+  if (subscriber) {
+    void subscriber.subscribe(PROGRESS_CHANNEL).catch((err: unknown) => {
+      log.error({ err }, 'failed to subscribe to the progress channel');
+    });
+    subscriber.on('message', (_channel: string, raw: string) => {
+      try {
+        hub.deliver(JSON.parse(raw) as IngestProgressEvent);
+      } catch (err) {
+        log.warn({ err }, 'malformed progress event discarded');
+      }
+    });
+  }
 
   app.get('/ws', { websocket: true }, (rawSocket, request) => {
     const socket = rawSocket as unknown as ProgressSocket;
@@ -122,8 +140,16 @@ export function registerProgressSocket(app: FastifyInstance, log: FastifyBaseLog
     try {
       app.jwt.verify(token ?? '');
     } catch {
-      send(socket, { type: 'error', message: 'A valid token query parameter is required.' });
-      socket.close();
+      // Closed only once the rejection frame has actually been flushed:
+      // closing straight after send() discards it, and the client is left
+      // guessing why the socket went away.
+      socket.send(
+        JSON.stringify({
+          type: 'error',
+          message: 'A valid token query parameter is required.',
+        } satisfies WsServerMessage),
+        () => socket.close(CLOSE_UNAUTHORIZED, 'unauthorized'),
+      );
       return;
     }
 
@@ -166,6 +192,7 @@ export function registerProgressSocket(app: FastifyInstance, log: FastifyBaseLog
   return {
     hub,
     close: async () => {
+      if (!subscriber) return;
       await subscriber.unsubscribe(PROGRESS_CHANNEL).catch(() => undefined);
       subscriber.disconnect();
     },

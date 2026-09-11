@@ -26,7 +26,9 @@ export class LocalBlobDriver implements BlobDriver {
     return full;
   }
 
-  async putIfAbsent(key: string, bytes: Buffer): Promise<PutResult> {
+  // contentType is part of the driver contract but has nowhere to go on a
+  // filesystem; S3 stores it as object metadata.
+  async putIfAbsent(key: string, bytes: Buffer, _contentType?: string): Promise<PutResult> {
     const path = this.pathFor(key);
     await mkdir(dirname(path), { recursive: true });
     try {
