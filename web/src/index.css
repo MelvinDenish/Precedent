@@ -1,3 +1,299 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ==========================================================================
+   PRECEDENT - token layer.  Direction: "Marginalia".
+   --------------------------------------------------------------------------
+   THE COLOUR LAW (do not break it in a later wave):
+     hue        = KIND of thing
+     saturation + border solidity = CERTAINTY about it
+     amber      = EVIDENCE.  Reserved exclusively for citations and the
+                  affordance that opens them.  Nothing else may be amber.
+     blue       = ACTION.  Buttons, links, focus.  Never decorative.
+     ABSENCE HAS NO HUE.  "We don't know" / "not covered" / "provisional"
+                  render hueless: tertiary ink, dashed border, hatch fill,
+                  plus an explicit mono text label.  A missing fact must
+                  never look like a known-bad fact.
+
+   Theme is driven entirely by these variables.  Do NOT use Tailwind `dark:`
+   utilities anywhere - the variable swap below already covers the system
+   preference, so the two mechanisms cannot desync.
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces - warm archival paper, not clinical white. */
+  --surface-0: 244 242 237;
+  --surface-1: 251 250 247;
+  --surface-2: 255 255 255;
+  --surface-3: 255 255 255;
+
+  /* Lines */
+  --line-subtle: 230 226 217;
+  --line: 216 211 199;
+  --line-strong: 189 182 166;
+
+  /* Ink */
+  --ink: 22 25 29;
+  --ink-2: 74 83 94;
+  --ink-3: 110 120 132;
+  --ink-inverse: 255 255 255;
+
+  /* Action */
+  --primary: 31 79 216;
+  --primary-hover: 26 66 184;
+  --on-primary: 255 255 255;
+  --primary-ink: 27 69 191;
+
+  /* Evidence - citations only */
+  --evidence: 154 100 18;
+  --evidence-ink: 122 78 12;
+  --evidence-line: 201 138 30;
+  --evidence-wash: 246 233 207;
+
+  /* Semantic */
+  --positive: 15 122 104;
+  --positive-wash: 222 242 237;
+  --danger: 180 35 24;
+  --danger-wash: 253 228 226;
+  --on-danger: 255 255 255;
+  --warn: 146 85 8;
+  --warn-wash: 250 236 210;
+
+  --focus: 31 79 216;
+  --scrim: 22 25 29;
+
+  --shadow-card: 0 1px 2px rgb(22 25 29 / 0.06), 0 1px 1px rgb(22 25 29 / 0.04);
+  --shadow-raised: 0 2px 6px rgb(22 25 29 / 0.08), 0 1px 2px rgb(22 25 29 / 0.06);
+  --shadow-popover: 0 12px 32px rgb(22 25 29 / 0.16), 0 2px 8px rgb(22 25 29 / 0.08);
+}
+
+/* System preference, when the user has made no explicit choice. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --surface-0: 12 15 19;
+    --surface-1: 18 22 28;
+    --surface-2: 23 28 35;
+    --surface-3: 30 36 45;
+
+    --line-subtle: 36 43 53;
+    --line: 46 55 66;
+    --line-strong: 61 72 84;
+
+    --ink: 232 237 242;
+    --ink-2: 167 179 192;
+    --ink-3: 125 138 152;
+    --ink-inverse: 12 15 19;
+
+    --primary: 58 102 232;
+    --primary-hover: 76 118 243;
+    --on-primary: 255 255 255;
+    --primary-ink: 124 160 255;
+
+    --evidence: 226 162 59;
+    --evidence-ink: 240 190 110;
+    --evidence-line: 169 125 46;
+    --evidence-wash: 46 36 20;
+
+    --positive: 53 201 172;
+    --positive-wash: 17 46 42;
+    --danger: 248 113 113;
+    --danger-wash: 59 24 24;
+    --on-danger: 12 15 19;
+    --warn: 226 162 59;
+    --warn-wash: 46 36 20;
+
+    --focus: 124 160 255;
+    --scrim: 4 6 9;
+
+    --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.03) inset, 0 1px 2px rgb(0 0 0 / 0.45);
+    --shadow-raised: 0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 4px 12px rgb(0 0 0 / 0.5);
+    --shadow-popover: 0 1px 0 0 rgb(255 255 255 / 0.05) inset, 0 18px 44px rgb(0 0 0 / 0.62);
+  }
+}
+
+/* An explicit choice wins in both directions. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --surface-0: 12 15 19;
+  --surface-1: 18 22 28;
+  --surface-2: 23 28 35;
+  --surface-3: 30 36 45;
+
+  --line-subtle: 36 43 53;
+  --line: 46 55 66;
+  --line-strong: 61 72 84;
+
+  --ink: 232 237 242;
+  --ink-2: 167 179 192;
+  --ink-3: 125 138 152;
+  --ink-inverse: 12 15 19;
+
+  --primary: 58 102 232;
+  --primary-hover: 76 118 243;
+  --on-primary: 255 255 255;
+  --primary-ink: 124 160 255;
+
+  --evidence: 226 162 59;
+  --evidence-ink: 240 190 110;
+  --evidence-line: 169 125 46;
+  --evidence-wash: 46 36 20;
+
+  --positive: 53 201 172;
+  --positive-wash: 17 46 42;
+  --danger: 248 113 113;
+  --danger-wash: 59 24 24;
+  --on-danger: 12 15 19;
+  --warn: 226 162 59;
+  --warn-wash: 46 36 20;
+
+  --focus: 124 160 255;
+  --scrim: 4 6 9;
+
+  --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.03) inset, 0 1px 2px rgb(0 0 0 / 0.45);
+  --shadow-raised: 0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 4px 12px rgb(0 0 0 / 0.5);
+  --shadow-popover: 0 1px 0 0 rgb(255 255 255 / 0.05) inset, 0 18px 44px rgb(0 0 0 / 0.62);
+}
+
+@layer base {
+  * {
+    border-color: rgb(var(--line) / 1);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scrollbar-color: rgb(var(--line-strong)) transparent;
+  }
+
+  body {
+    @apply bg-surface-0 font-sans text-[0.9375rem] leading-relaxed text-ink antialiased;
+    min-height: 100dvh;
+  }
+
+  /* Numbers are load-bearing in this product: never let them reflow. */
+  .tnum,
+  table,
+  time,
+  output {
+    font-variant-numeric: tabular-nums;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-sans font-semibold tracking-tight text-ink;
+    text-wrap: balance;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--focus));
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  ::selection {
+    background: rgb(var(--evidence) / 0.28);
+    color: rgb(var(--ink));
+  }
+
+  ::placeholder {
+    color: rgb(var(--ink-3));
+  }
+
+  /* Long-form lesson prose is the one place a serif is allowed. */
+  .prose-precedent {
+    @apply font-serif text-[1.0625rem] leading-[1.75] text-ink-2;
+    max-width: 68ch;
+  }
+  .prose-precedent > * + * {
+    margin-top: 1em;
+  }
+  .prose-precedent strong {
+    @apply font-semibold text-ink;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* THE ABSENCE TREATMENT. Hueless by law. Always paired with a text label. */
+  .absence {
+    background-image: repeating-linear-gradient(
+      135deg,
+      rgb(var(--ink-3) / 0.16) 0 1px,
+      transparent 1px 7px
+    );
+  }
+
+  .shimmer {
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(var(--ink-3) / 0.1) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: precedent-shimmer 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes precedent-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes precedent-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes precedent-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes precedent-sheet {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes precedent-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

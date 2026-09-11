@@ -45,13 +45,6 @@ export interface UploadFields {
 export interface CheapText {
   text: string;
   pageCount: number;
-  /**
-   * false when the text layer is missing or near-empty, which is the common
-   * case: most of the corpus is image-only scans. The content hash then comes
-   * from the bytes, because hashing empty text would make every scan in a
-   * subject collide on UNIQUE (subject_id, content_hash).
-   */
-  hasTextLayer: boolean;
 }
 
 // --- WebSocket ------------------------------------------------------

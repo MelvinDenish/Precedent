@@ -8,6 +8,26 @@
       name="description"
       content="Your syllabus tells you what you could be asked. Precedent tells you what you will be, and then teaches you it."
     />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@400;600&display=swap"
+    />
+    <script>
+      /* Apply the stored theme before first paint: a white flash at 2am is a bug. */
+      (function () {
+        try {
+          var t = localStorage.getItem('precedent.theme');
+          if (t === 'dark' || t === 'light') {
+            document.documentElement.setAttribute('data-theme', t);
+          }
+        } catch (e) {
+          /* private mode - fall through to the system preference */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
