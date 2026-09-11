@@ -128,7 +128,45 @@ This is *deployment* novelty, not research novelty. See [docs/PRIOR_ART.md](docs
 
 ## Status
 
-In development. See [ROADMAP.md](docs/ROADMAP.md).
+In active development. What is built and verified, against a live Postgres
+and the real 31-paper corpus:
+
+| Area | State |
+|---|---|
+| Schema, 7 migrations | Applied, idempotent, pgvector + HNSW indexes verified |
+| Shared contract | Frozen: domain types, API routes, queue jobs, Zod schemas |
+| Syllabus ingestion | Parses the R2023 curriculum into units, hours and course outcomes for all 3 subjects |
+| Extraction | Text-quality gate calibrated on all 31 papers; Gemini vision validated against a real scan |
+| Segmentation | Rule path for the PART A/B/C template; OR rule asserted in both directions |
+| Auth and upload | JWT, and idempotent upload that survives papers with no text layer |
+| ROI model | Both layers, the regime classifier, and the Night Before optimizer |
+| Clustering, teaching, Learn Loop, tutor, UI | Not yet built |
+
+**No measured accuracy numbers are published here yet, because the
+evaluation has not been run.** When it is, every number will carry its
+baseline and its sample size, as `docs/EVALUATION.md` requires. A percentage
+without those is the kind of claim this project exists to avoid.
+
+211 tests pass. See [ROADMAP.md](docs/ROADMAP.md) for what remains and
+[DEPLOY_AWS.md](docs/DEPLOY_AWS.md) for deployment.
+
+### What the real corpus changed
+
+Three assumptions in these documents were written before the papers were in
+hand, and the corpus contradicted all three. Each is recorded where it
+matters rather than quietly patched:
+
+- **"Archive PDFs are mostly digital text."** False. 19 of 31 papers are
+  image-only scans, and one more carries a text layer so badly OCR'd it
+  reads `"Define ambiquous qrammar"`. Vision extraction is the primary path,
+  and an empty-layer check was replaced by a quality gate.
+- **"College is not a corpus key."** True for centrally-set end-semester
+  papers, false for the CEG and MIT internal assessments sitting in the same
+  corpus. Handled with columns, so the shared graph stays whole while
+  statistics stay scoped.
+- **`unit_hint` was a guess.** Every R2023 paper prints a CO and a Bloom
+  level against each question, which is real supervision for syllabus
+  alignment.
 
 ---
 
