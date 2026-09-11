@@ -1,0 +1,26 @@
+{
+  "name": "precedent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "workspaces": ["shared", "api", "worker", "web"],
+  "scripts": {
+    "build": "npm run build -ws --if-present",
+    "dev": "npm run dev -ws --if-present",
+    "typecheck": "tsc -b --pretty",
+    "lint": "eslint . --ext .ts,.tsx --max-warnings 0",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "migrate": "tsx scripts/migrate.ts",
+    "migrate:status": "tsx scripts/migrate.ts --status",
+    "seed": "tsx scripts/seed.ts",
+    "eval": "tsx scripts/evaluate.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

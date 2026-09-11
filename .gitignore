@@ -1,11 +1,18 @@
-# ── Corpus: never commit university question papers ──────────
-# Redistributing exam papers is a different question from using
-# them locally. Seed PDFs stay on disk; the repo holds the loader
-# plus a small synthetic fixture set for tests.
+# ── Corpus: never commit university question papers or textbooks ──
+# Redistributing exam papers is a different question from using them
+# locally, and the textbooks under data/**/TB/ are copyrighted. This
+# repo is PUBLIC. Seed material stays on disk; the repo holds the
+# loader plus a small synthetic fixture set for tests.
+/data/
 /corpus/
 /seed/
 *.pdf
+*.ppt
+*.pptx
+*.doc
+*.docx
 !tests/fixtures/**/*.pdf
+!tests/fixtures/**/*.json
 
 # ── Secrets ──────────────────────────────────────────────────
 .env

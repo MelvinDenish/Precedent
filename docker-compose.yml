@@ -1,0 +1,54 @@
+# Works unchanged for local development and for AWS Deploy Path A
+# (a single EC2 box running the whole stack). See docs/DEPLOY_AWS.md.
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: precedent
+      POSTGRES_PASSWORD: precedent
+      POSTGRES_DB: precedent
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U precedent -d precedent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    ports: ["6379:6379"]
+    volumes: ["redisdata:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build: { context: ., dockerfile: api/Dockerfile }
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgres://precedent:precedent@postgres:5432/precedent
+      REDIS_URL: redis://redis:6379
+    ports: ["3000:3000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    profiles: ["full"]
+
+  worker:
+    build: { context: ., dockerfile: worker/Dockerfile }
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgres://precedent:precedent@postgres:5432/precedent
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    profiles: ["full"]
+
+volumes:
+  pgdata:
+  redisdata:

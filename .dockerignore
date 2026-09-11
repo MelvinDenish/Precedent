@@ -1,0 +1,11 @@
+node_modules
+**/node_modules
+**/dist
+data
+corpus
+seed
+.git
+.models
+.blobs
+*.log
+coverage

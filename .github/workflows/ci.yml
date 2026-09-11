@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: precedent
+          POSTGRES_PASSWORD: precedent
+          POSTGRES_DB: precedent
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U precedent"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+
+    env:
+      DATABASE_URL: postgres://precedent:precedent@localhost:5432/precedent
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: ci-only-secret-not-used-in-any-deployment
+      # The whole suite runs with no API keys: a deterministic mock provider
+      # stands in, which is also what makes the offline requirement testable.
+      LLM_PROVIDER_MODE: mock
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run migrate
+      - run: npx tsc -b shared api worker
+      - run: npm test
