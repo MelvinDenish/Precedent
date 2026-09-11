@@ -75,14 +75,29 @@ affiliated non-autonomous colleges). Three consequences:
    `CS6111` under Regulation 2018 rather than `CS23502` under R2023. The
    `subject_lineage` bridge is therefore load-bearing rather than decorative,
    exactly as anticipated.
-3. **No syllabus document is present.** However, every R2023 paper prints its
-   course-outcome list and tags each question with a `CO` and a `BL` (Bloom's
-   level), and the module notes are numbered `Module01..10`. Units are derived
-   from those, and the printed `CO` codes serve as ground-truth supervision
-   for syllabus alignment -- better evidence than the `unit_hint` the schema
-   originally guessed at. The coverage matrix's "in syllabus, never examined"
-   quadrant remains only partially answerable until the official syllabus is
-   supplied.
+3. **The syllabus is present and parses cleanly.** `B.E. CSE.pdf` is the full
+   R2023 curriculum document; the parser in `worker/src/syllabus/parse.ts`
+   extracts, for each of the three subjects, 5 units with their titles, topic
+   lists and **lecture hours**, plus the numbered **course outcomes** and the
+   prescribed textbooks. Verified against the real document: CS23501 yields
+   6 outcomes, CS23502 and CS23503 yield 5 each.
+
+   Two consequences beyond simply having unit titles:
+
+   - **Lecture hours are the syllabus prior on marks weight**, and they are
+     what the ROI model leans on in a LOW repetition regime where
+     per-question `p_next` carries almost no signal. Without them the concept
+     reframe would have nothing to fall back on in exactly the subjects it
+     exists to rescue.
+   - **Every R2023 paper tags each question with a CO number**, and those
+     numbers are now resolvable to the course outcomes printed in the
+     syllabus. Syllabus alignment becomes a lookup rather than an LLM
+     classification, and the LLM-as-judge mapping step is reduced to
+     concept-level work inside a known unit.
+
+   With both syllabus and papers in hand, the coverage matrix is fully
+   computable, including its hardest quadrant -- **in the syllabus, never
+   examined**.
 
 ### 3.2 Extraction difficulty, measured across all 31 papers
 

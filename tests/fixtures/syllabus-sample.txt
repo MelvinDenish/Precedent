@@ -1,0 +1,46 @@
+CS23501                   OPERATING SYSTEMS                                                         86
+                                                                              LT P C
+                                                                              30 4 5
+UNIT � I    INTRODUCTION                                                      8L, 12P
+Introduction to Operating Systems � Operating System Operations � Resource Management �
+Operating System Services � System Calls � Building and Booting an Operating System
+PRACTICALS:
+ 1. Basic UNIX commands.
+ 2. Shell programming.
+UNIT � II   PROCESSES AND THREADS                                             9L, 12P
+Process Concept � Process Scheduling � Interprocess Communication � Threads
+PRACTICALS:
+ 1. File system related system calls.
+UNIT � III  PROCESS MANAGEMENT AND SYNCHRONIZATION                            10L, 12P
+Basic Concepts of CPU Scheduling � Scheduling Algorithms � Semaphores � Deadlocks
+     Prepared by          HoD^                             HoD � CSE & CT     FCP
+(Name & Signature)
+^ Applicable to only courses Offered by other Departments
+                                                                          87
+More topics after the page break � Monitors
+UNIT � IV   MEMORY MANAGEMENT                                                 10L, 12P
+Contiguous Memory Allocation � Paging � Segmentation � Thrashing
+UNIT � V  STORAGE MANAGEMENT                                                  8L, 12P
+File Concept � Access Methods � HDD Scheduling
+                            TOTAL: 45L + 60P = 105 PERIODS
+COURSE OUTCOMES :
+Upon completion of the course, the students will be able to
+1. Articulate the main concepts, key ideas, strengths and limitations of Operating
+    Systems and apply the basic commands of the UNIX OS.
+2. To analyze the mechanisms of operating systems to handle processes and threads
+3. Elaborate, design and experiment various scheduling algorithms
+4. Discuss various memory management schemes and design them
+5. Point out and analyze the various aspects of storage management
+6. Build / Rebuild functionalities of UNIX OS using XV6.
+REFERENCES:
+1. Abraham Silberschatz, Greg Gagne and Peter B. Galvin. "Operating System
+     Concepts", 10th Edition, John Wiley & Sons Inc., 2018.
+2. Andrew S. Tanenbaum, Herbert Bos. "Modern Operating Systems", Pearson, 2023.
+CO� PO Mapping
+PO1 PO2 PO3
+CO1 3 1 3
+CS23502             NETWORKS AND DATA COMMUNICATION                                                 89
+UNIT � I    INTRODUCTION TO NETWORKING                                        7L, 16P
+Building a network � Layered Architecture
+COURSE OUTCOMES :
+1. Highlight the significance of the functions of each layer in the network
