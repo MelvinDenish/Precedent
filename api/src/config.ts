@@ -4,6 +4,7 @@
  * There is no hardcoded fallback secret anywhere in this codebase. A server
  * that boots with a default JWT secret is a server that ships one.
  */
+import './env.js'; // must precede every read below; see env.ts
 
 function required(name: string): string {
   const value = process.env[name];
@@ -39,6 +40,32 @@ export const config = {
     localDir: optional('BLOB_LOCAL_DIR', './.blobs'),
     bucket: process.env.S3_BUCKET ?? null,
     region: optional('S3_REGION', 'ap-south-1'),
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID ?? null,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? null,
+    /** Overridable so the S3 driver can be pointed at MinIO or a test double. */
+    endpoint: process.env.S3_ENDPOINT ?? null,
+  },
+
+  upload: {
+    maxBytes: Number(optional('UPLOAD_MAX_BYTES', String(32 * 1024 * 1024))),
+    /** Per user, not per IP: a shared campus NAT would otherwise rate-limit a whole college. */
+    ratePerWindow: Number(optional('UPLOAD_RATE_MAX', '20')),
+    rateWindow: optional('UPLOAD_RATE_WINDOW', '1 minute'),
+    /**
+     * Below this many extracted characters the text layer is treated as absent
+     * and the content hash is derived from the bytes instead. See pdf/text.ts:
+     * hashing near-empty text would collapse every scanned paper in a subject
+     * into one row via UNIQUE (subject_id, content_hash).
+     */
+    minTextChars: Number(optional('UPLOAD_MIN_TEXT_CHARS', '200')),
+  },
+
+  queue: {
+    /** Capped attempts, then dead-letter. */
+    attempts: Number(optional('QUEUE_ATTEMPTS', '5')),
+    backoffDelayMs: Number(optional('QUEUE_BACKOFF_MS', '2000')),
+    /** Fraction of the computed delay randomised away, to break retry convoys. */
+    backoffJitter: Number(optional('QUEUE_BACKOFF_JITTER', '0.5')),
   },
 } as const;
 

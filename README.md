@@ -106,7 +106,7 @@ This is *deployment* novelty, not research novelty. See [docs/PRIOR_ART.md](docs
 
 **Three agents out of fourteen components.** Duplicate adjudication, tutor chat, and answer evaluation earned it; everything else is deterministic code or a single LLM call. See [docs/AGENTS.md](docs/AGENTS.md) for the test applied and what failed it.
 
-**Stack:** React + TypeScript + React Flow · Fastify · Postgres 16 + pgvector · Redis + BullMQ · local ONNX embeddings (offline-capable) · Gemini + Groq free tiers.
+**Stack:** React + TypeScript + React Flow · Fastify · Postgres 16 + pgvector · Redis + BullMQ · local ONNX embeddings (offline-capable) · Gemini + Groq free tiers. Deployed on AWS free tier — see [DEPLOY_AWS.md](docs/DEPLOY_AWS.md).
 
 ---
 
@@ -122,6 +122,7 @@ This is *deployment* novelty, not research novelty. See [docs/PRIOR_ART.md](docs
 | [EVALUATION.md](docs/EVALUATION.md) | Held-out protocol, baselines, metrics |
 | [PRIOR_ART.md](docs/PRIOR_ART.md) | What already exists, and what's genuinely ours |
 | [ROADMAP.md](docs/ROADMAP.md) | 6-week build order, cut order, future work |
+| [DEPLOY_AWS.md](docs/DEPLOY_AWS.md) | AWS free-tier deployment, both paths, verification |
 
 ---
 

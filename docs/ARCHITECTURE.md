@@ -225,16 +225,30 @@ Ingestion is asynchronous, so the client subscribes over WebSocket to `paper:{id
 
 ## 5. Deployment
 
+Target is **AWS**, on free tiers. Full runbook in [DEPLOY_AWS.md](DEPLOY_AWS.md);
+this is the shape.
+
 | Component | Host | Notes |
 |---|---|---|
-| `web` | Vercel | Static SPA |
-| `api` | Railway or Render | Stateless, scale horizontally |
-| `worker` | Railway or Render | Separate process, scale independently of API |
-| Postgres + pgvector | Neon free tier | Suspends when idle; first request after sleep is slow |
-| Redis | Upstash free tier | BullMQ backend |
-| Blobs | Cloudflare R2 or Supabase Storage | Original PDFs, for the citation trail |
+| `web` | S3 + CloudFront | Static SPA. CloudFront's 1 TB/month is always-free. Needs a 403/404 -> `/index.html` error mapping or deep links break |
+| `api` | EC2, Docker | Stateless, scales horizontally. TLS terminated by Caddy |
+| `worker` | EC2, Docker | Separate process, scaled independently of the API |
+| Postgres 16 + pgvector | Neon free tier | `CREATE EXTENSION vector` must be run explicitly. Suspends when idle; first request after sleep is slow |
+| Redis | Upstash free tier | BullMQ backend. Must be `noeviction` -- any `allkeys-*` policy silently discards queued jobs |
+| Blobs | S3 | Original PDFs, for the citation trail. Bucket stays private |
 
-**Deploy in Week 1, not Week 6.** A live URL that exists from the start can never become the thing that got cut. Neon suspends idle compute, so either add a keep-alive ping to `/health` or state the cold-start delay in the README.
+**Why Neon and Upstash rather than RDS and ElastiCache.** The AWS free tier
+for RDS and EC2 lasts 12 months; the Neon and Upstash free tiers do not
+expire. Keeping the stateful services off the box also means the data
+survives rebuilding it. An all-in-one single-EC2 variant is documented as
+Path A for anyone who wants everything inside their own AWS account, and the
+RDS + ElastiCache upgrade path is documented for when the free tiers stop
+being enough. **The Docker artifacts are identical across all three.**
+
+**Deploy in Week 1, not Week 6.** A live URL that exists from the start can
+never become the thing that got cut. Because Neon suspends idle compute,
+either add a keep-alive ping to `/health` or state the cold-start delay in the
+README -- a recruiter's first click should not be a 30-second wait.
 
 ### 5.1 Migrations
 
